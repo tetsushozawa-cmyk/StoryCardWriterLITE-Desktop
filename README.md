@@ -1,6 +1,6 @@
-# StoryCardWriter Desktop
+# StoryCardWriter LITE
 
-Android版StoryCardWriterで保存したJSONを、カードの順序と配置を保ったまま開き、編集して保存するElectronアプリです。
+StoryCardWriterで保存した `.scw`（JSON形式）を、カードの順序と配置を保ったまま開き、編集して保存するElectronアプリです。従来の `.json` ファイルも開いて保存でき、保存内容のデータ構造は変更しません。
 
 ## 起動
 
@@ -32,4 +32,4 @@ pnpm build:mac
 npm run build:mac
 ```
 
-完成したアプリは `dist/mac/StoryCardWriter Desktop.app` に出力されます。
+完成したアプリは `dist/mac/StoryCardWriter LITE.app` に出力されます。

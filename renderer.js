@@ -229,7 +229,7 @@ function syncSetting(key, value) {
 
 function suggestedFileName() {
   const safeTitle = (story.settings.title || 'untitled').replace(/[\\/:*?"<>|]/g, '_');
-  return `${safeTitle}.json`;
+  return `${safeTitle}.scw`;
 }
 
 async function saveAs() {

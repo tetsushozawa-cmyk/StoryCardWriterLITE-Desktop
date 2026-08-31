@@ -7,6 +7,8 @@ let mainWindow = null;
 let rendererIsDirty = false;
 let allowWindowClose = false;
 
+app.setName('StoryCardWriter LITE');
+
 function sendCommand(command) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.send('app:command', command);
@@ -73,7 +75,7 @@ function createWindow() {
     minWidth: 760,
     minHeight: 640,
     backgroundColor: '#f7f7f5',
-    title: 'StoryCardWriter Desktop',
+    title: 'StoryCardWriter LITE',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -105,8 +107,8 @@ function createWindow() {
   });
 }
 
-function ensureJsonExtension(filePath) {
-  return filePath.toLowerCase().endsWith('.json') ? filePath : `${filePath}.json`;
+function ensureDocumentExtension(filePath) {
+  return /\.(?:scw|json)$/i.test(filePath) ? filePath : `${filePath}.scw`;
 }
 
 function validateJsonText(jsonText) {
@@ -127,10 +129,10 @@ async function writeJsonAtomically(filePath, content) {
 
 ipcMain.handle('file:open', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'StoryCardWriterのJSONを開く',
+    title: 'StoryCardWriterファイルを開く',
     properties: ['openFile'],
     filters: [
-      { name: 'JSONファイル', extensions: ['json'] },
+      { name: 'StoryCardWriterファイル', extensions: ['scw', 'json'] },
       { name: 'すべてのファイル', extensions: ['*'] },
     ],
   });
@@ -152,16 +154,16 @@ ipcMain.handle('file:save', async (_event, payload) => {
 
 ipcMain.handle('file:save-as', async (_event, payload) => {
   validateJsonText(payload?.content);
-  const defaultName = String(payload?.suggestedName || 'untitled.json')
+  const defaultName = String(payload?.suggestedName || 'untitled.scw')
     .replace(/[\\/:*?"<>|]/g, '_');
   const result = await dialog.showSaveDialog(mainWindow, {
     title: '名前を付けて保存',
     defaultPath: defaultName,
-    filters: [{ name: 'JSONファイル', extensions: ['json'] }],
+    filters: [{ name: 'StoryCardWriterファイル', extensions: ['scw', 'json'] }],
   });
   if (result.canceled || !result.filePath) return { canceled: true };
 
-  const filePath = path.resolve(ensureJsonExtension(result.filePath));
+  const filePath = path.resolve(ensureDocumentExtension(result.filePath));
   await writeJsonAtomically(filePath, payload.content);
   authorizedPaths.add(filePath);
   return { canceled: false, filePath, fileName: path.basename(filePath) };

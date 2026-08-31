@@ -1,8 +1,8 @@
 {
-  "name": "story-card-writer-desktop",
-  "productName": "StoryCardWriter Desktop",
+  "name": "story-card-writer-lite-desktop",
+  "productName": "StoryCardWriter LITE",
   "version": "0.1.0",
-  "description": "Android版StoryCardWriterのJSONを編集するデスクトップアプリ",
+  "description": "StoryCardWriter互換の.scw/JSONファイルを編集するLITEデスクトップアプリ",
   "main": "main.js",
   "private": true,
   "scripts": {
@@ -15,8 +15,10 @@
     "electron-builder": "24.13.3"
   },
   "build": {
-    "appId": "com.shozawatetsu.storycardwriterdesktop",
-    "productName": "StoryCardWriter Desktop",
+    "appId": "com.shozawatetsu.storycardwriterlite",
+    "productName": "StoryCardWriter LITE",
+    "executableName": "StoryCardWriter LITE",
+    "artifactName": "StoryCardWriter-LITE-${version}-${arch}.${ext}",
     "asar": true,
     "directories": {
       "output": "dist"
