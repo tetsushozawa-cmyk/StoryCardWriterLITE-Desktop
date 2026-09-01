@@ -29,6 +29,7 @@
       "index.html",
       "style.css",
       "renderer.js",
+      "card-editor.js",
       "document-codec.js",
       "package.json"
     ],

@@ -1,4 +1,5 @@
 const codec = window.StoryDocumentCodec;
+const cardEditor = window.StoryCardEditor;
 
 const elements = {
   newButton: document.querySelector('#new-button'),
@@ -190,34 +191,29 @@ function deleteCard(cardId) {
   showToast('カードを削除しました');
 }
 
+function commitEditorInput() {
+  const result = cardEditor.commitInput(story, {
+    body: elements.cardBody.value,
+    selectedType,
+    editingCardId,
+    insertingAfterCardId,
+  }, codec.createCard);
+  if (!result.committed) return result;
+
+  setDirty(true);
+  resetEditor();
+  renderCards();
+  return result;
+}
+
 function submitCard() {
-  const body = elements.cardBody.value.trim();
-  if (!body) {
+  const result = commitEditorInput();
+  if (!result.committed) {
     showToast('文章を入力してください');
     elements.cardBody.focus();
     return;
   }
-
-  if (editingCardId) {
-    const card = story.cards.find((item) => item.id === editingCardId);
-    if (card) {
-      card.type = selectedType;
-      card.body = body;
-    }
-    showToast('カードを更新しました');
-  } else {
-    const card = codec.createCard(selectedType, body);
-    if (insertingAfterCardId) {
-      const index = story.cards.findIndex((item) => item.id === insertingAfterCardId);
-      story.cards.splice(index >= 0 ? index + 1 : story.cards.length, 0, card);
-    } else {
-      story.cards.push(card);
-    }
-    showToast('カードを追加しました');
-  }
-  setDirty(true);
-  resetEditor();
-  renderCards();
+  showToast(result.action === 'updated' ? 'カードを更新しました' : 'カードを追加しました');
 }
 
 function syncSetting(key, value) {
@@ -233,6 +229,7 @@ function suggestedFileName() {
 }
 
 async function saveAs() {
+  commitEditorInput();
   try {
     const result = await window.desktopFiles.saveAs(codec.serialize(story), suggestedFileName());
     if (result.canceled) return false;
@@ -248,6 +245,7 @@ async function saveAs() {
 }
 
 async function save() {
+  commitEditorInput();
   if (!dirty) return true;
   if (!currentFilePath) return saveAs();
   try {
@@ -329,6 +327,7 @@ elements.saveButton.addEventListener('click', save);
 elements.saveAsButton.addEventListener('click', saveAs);
 elements.submitCardButton.addEventListener('click', submitCard);
 elements.cancelEditButton.addEventListener('click', resetEditor);
+elements.cardBody.addEventListener('input', () => setDirty(true));
 elements.titleInput.addEventListener('input', (event) => syncSetting('title', event.target.value));
 elements.protagonistInput.addEventListener('input', (event) => syncSetting('protagonistName', event.target.value));
 elements.partnerInput.addEventListener('input', (event) => syncSetting('partnerName', event.target.value));
