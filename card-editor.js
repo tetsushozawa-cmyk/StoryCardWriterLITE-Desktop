@@ -1,4 +1,13 @@
 (function attachCardEditor(globalObject) {
+  function commitPendingCard(document, selectedType, body, createCard) {
+    return commitInput(document, {
+      body,
+      selectedType,
+      editingCardId: null,
+      insertingAfterCardId: null,
+    }, createCard);
+  }
+
   function commitInput(document, editor, createCard) {
     const body = String(editor.body ?? '').trim();
     if (!body) return { committed: false, action: null };
@@ -22,7 +31,7 @@
     return { committed: true, action: 'added' };
   }
 
-  const cardEditor = Object.freeze({ commitInput });
+  const cardEditor = Object.freeze({ commitInput, commitPendingCard });
   globalObject.StoryCardEditor = cardEditor;
   if (typeof module !== 'undefined' && module.exports) module.exports = cardEditor;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

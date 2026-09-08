@@ -164,6 +164,20 @@ function focusEditor() {
 function startEdit(cardId) {
   const card = story.cards.find((item) => item.id === cardId);
   if (!card) return;
+
+  if (editingCardId === null && insertingAfterCardId === null) {
+    const result = cardEditor.commitPendingCard(
+      story,
+      selectedType,
+      elements.cardBody.value,
+      codec.createCard,
+    );
+    if (result.committed) {
+      setDirty(true);
+      renderCards();
+    }
+  }
+
   editingCardId = cardId;
   insertingAfterCardId = null;
   selectedType = card.type;

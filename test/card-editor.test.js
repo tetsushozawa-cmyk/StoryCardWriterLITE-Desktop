@@ -43,6 +43,50 @@ test('既に追加した後の空の入力は二重追加しない', () => {
   assert.equal(document.cards[0].body, '一度だけ');
 });
 
+test('新規入力中に過去カードの編集を始めても入力が通常カードとして残る', () => {
+  const document = codec.newDocument();
+  const existing = codec.createCard('action', '過去のカード');
+  document.cards.push(existing);
+
+  const result = cardEditor.commitPendingCard(
+    document,
+    'inner',
+    '入力中の新規カード',
+    codec.createCard,
+  );
+
+  assert.deepEqual(result, { committed: true, action: 'added' });
+  assert.deepEqual(document.cards.map((card) => card.body), [
+    '過去のカード',
+    '入力中の新規カード',
+  ]);
+  assert.equal(document.cards[1].type, 'inner');
+});
+
+test('新規入力を確定後に編集モードへ入っても同じ内容を二重登録しない', () => {
+  const document = codec.newDocument();
+  const existing = codec.createCard('action', '過去のカード');
+  document.cards.push(existing);
+
+  cardEditor.commitPendingCard(document, 'inner', '入力中の新規カード', codec.createCard);
+  commit(document, { body: existing.body, editingCardId: existing.id });
+
+  assert.deepEqual(document.cards.map((card) => card.body), [
+    '過去のカード',
+    '入力中の新規カード',
+  ]);
+});
+
+test('空白入力中に過去カードの編集を始めてもカードは増えない', () => {
+  const document = codec.newDocument();
+  document.cards.push(codec.createCard('action', '過去のカード'));
+
+  const result = cardEditor.commitPendingCard(document, 'inner', ' \n\t ', codec.createCard);
+
+  assert.deepEqual(result, { committed: false, action: null });
+  assert.equal(document.cards.length, 1);
+});
+
 test('カード追加なしの入力を.scwに保存し、閉じて再度開ける', async (context) => {
   const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'story-card-writer-lite-'));
   context.after(() => fs.rm(temporaryDirectory, { recursive: true, force: true }));
