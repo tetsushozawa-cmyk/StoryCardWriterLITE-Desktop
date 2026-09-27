@@ -3,11 +3,21 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 
 const authorizedPaths = new Set();
+const pendingOpenFiles = [];
 let mainWindow = null;
+let rendererIsReady = false;
+let isFlushingOpenFiles = false;
 let rendererIsDirty = false;
 let allowWindowClose = false;
 
 app.setName('StoryCardWriter LITE');
+
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+  pendingOpenFiles.push(filePath);
+  flushPendingOpenFiles();
+  if (app.isReady() && (!mainWindow || mainWindow.isDestroyed())) createWindow();
+});
 
 function sendCommand(command) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -69,6 +79,8 @@ function createApplicationMenu() {
 }
 
 function createWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) return;
+  rendererIsReady = false;
   mainWindow = new BrowserWindow({
     width: 1180,
     height: 900,
@@ -86,6 +98,16 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    rendererIsReady = true;
+    flushPendingOpenFiles();
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    rendererIsReady = false;
+  });
 
   mainWindow.on('close', async (event) => {
     if (allowWindowClose || !rendererIsDirty) return;
@@ -127,6 +149,38 @@ async function writeJsonAtomically(filePath, content) {
   }
 }
 
+async function readStoryFile(requestedPath) {
+  const filePath = path.resolve(requestedPath);
+  const content = await fs.readFile(filePath, 'utf8');
+  authorizedPaths.add(filePath);
+  return { canceled: false, filePath, fileName: path.basename(filePath), content };
+}
+
+async function flushPendingOpenFiles() {
+  if (isFlushingOpenFiles || !rendererIsReady || !mainWindow || mainWindow.isDestroyed()) return;
+  isFlushingOpenFiles = true;
+  try {
+    while (pendingOpenFiles.length > 0 && mainWindow && !mainWindow.isDestroyed()) {
+      const filePath = pendingOpenFiles.shift();
+      try {
+        mainWindow.webContents.send('app:open-file', await readStoryFile(filePath));
+      } catch (error) {
+        mainWindow.webContents.send('app:open-file', {
+          filePath,
+          fileName: path.basename(filePath),
+          errorMessage: error.message,
+        });
+      }
+    }
+  } finally {
+    isFlushingOpenFiles = false;
+  }
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
 ipcMain.handle('file:open', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: 'StoryCardWriterファイルを開く',
@@ -138,10 +192,7 @@ ipcMain.handle('file:open', async () => {
   });
   if (result.canceled || result.filePaths.length === 0) return { canceled: true };
 
-  const filePath = path.resolve(result.filePaths[0]);
-  const content = await fs.readFile(filePath, 'utf8');
-  authorizedPaths.add(filePath);
-  return { canceled: false, filePath, fileName: path.basename(filePath), content };
+  return readStoryFile(result.filePaths[0]);
 });
 
 ipcMain.handle('file:save', async (_event, payload) => {

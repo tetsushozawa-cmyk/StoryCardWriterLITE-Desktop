@@ -9,4 +9,8 @@ contextBridge.exposeInMainWorld('desktopFiles', Object.freeze({
     if (typeof handler !== 'function') return;
     ipcRenderer.on('app:command', (_event, command) => handler(command));
   },
+  onOpenFile: (handler) => {
+    if (typeof handler !== 'function') return;
+    ipcRenderer.on('app:open-file', (_event, result) => handler(result));
+  },
 }));

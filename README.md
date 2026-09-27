@@ -26,10 +26,14 @@ Intel Mac向けの署名なしアプリを作成します。
 pnpm build:mac
 ```
 
-またはnpmを使用する場合：
+アーキテクチャを明示する場合：
 
 ```sh
-npm run build:mac
+pnpm build:mac:x64
+pnpm build:mac:arm64
 ```
 
-完成したアプリは `dist/mac/StoryCardWriter LITE.app` に出力されます。
+完成したアプリは次の場所に出力されます。
+
+- Intel: `dist/mac-x64/StoryCardWriter LITE - Intel.app`
+- Apple Silicon: `dist/mac-arm64/StoryCardWriter LITE - Apple Silicon.app`

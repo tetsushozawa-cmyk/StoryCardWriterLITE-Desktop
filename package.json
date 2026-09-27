@@ -8,7 +8,9 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "build:mac": "electron-builder --mac dir --x64"
+    "build:mac": "node scripts/build-mac.js x64",
+    "build:mac:x64": "node scripts/build-mac.js x64",
+    "build:mac:arm64": "node scripts/build-mac.js arm64"
   },
   "devDependencies": {
     "electron": "37.2.6",
@@ -32,6 +34,14 @@
       "card-editor.js",
       "document-codec.js",
       "package.json"
+    ],
+    "fileAssociations": [
+      {
+        "ext": "scw",
+        "name": "StoryCardWriter Document",
+        "description": "StoryCardWriter文書",
+        "role": "Editor"
+      }
     ],
     "mac": {
       "category": "public.app-category.productivity",

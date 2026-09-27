@@ -274,19 +274,33 @@ async function save() {
   }
 }
 
+function applyOpenedFile(result) {
+  const loaded = codec.parse(result.content);
+  story = loaded;
+  currentFilePath = result.filePath;
+  currentFileName = result.fileName;
+  resetEditor();
+  setDirty(false);
+  renderAll();
+  showToast(`開きました：${currentFileName}`);
+}
+
 async function openFile() {
   if (!confirmDiscardChanges()) return;
   try {
     const result = await window.desktopFiles.open();
     if (result.canceled) return;
-    const loaded = codec.parse(result.content);
-    story = loaded;
-    currentFilePath = result.filePath;
-    currentFileName = result.fileName;
-    resetEditor();
-    setDirty(false);
-    renderAll();
-    showToast(`開きました：${currentFileName}`);
+    applyOpenedFile(result);
+  } catch (error) {
+    showToast(`開けませんでした：${error.message}`);
+  }
+}
+
+async function openExternalFile(result) {
+  try {
+    if (result.errorMessage) throw new Error(result.errorMessage);
+    if (!confirmDiscardChanges()) return;
+    applyOpenedFile(result);
   } catch (error) {
     showToast(`開けませんでした：${error.message}`);
   }
@@ -334,6 +348,10 @@ const commandHandlers = {
 };
 
 window.desktopFiles?.onCommand((command) => commandHandlers[command]?.());
+let externalOpenChain = Promise.resolve();
+window.desktopFiles?.onOpenFile((result) => {
+  externalOpenChain = externalOpenChain.then(() => openExternalFile(result));
+});
 
 elements.newButton.addEventListener('click', newDocument);
 elements.openButton.addEventListener('click', openFile);
